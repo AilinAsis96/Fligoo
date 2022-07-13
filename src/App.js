@@ -2,10 +2,11 @@ import React, {useEffect, useState} from 'react';
 import './App.css';
 import axios from 'axios';
 import {makeStyles} from '@material-ui/core/styles';
-import {Table, TableContainer, TableHead, TableCell, TableBody, TableRow, Modal, Button, TextField} from '@material-ui/core';
-import {Edit, Delete} from '@material-ui/icons';
+import {Table, TableContainer, TableHead, TableCell, TableBody, TableRow, Modal, Button, TextField, Avatar} from '@material-ui/core';
+import {Edit, Delete, Add} from '@material-ui/icons';
 
-const baseUrl='http://localhost:3001/consolas/'
+
+const baseUrl='https://reqres.in/api/users/'
 
 const useStyles = makeStyles((theme) => ({
   modal: {
@@ -24,135 +25,140 @@ const useStyles = makeStyles((theme) => ({
   }, 
   inputMaterial:{
     width: '100%'
+  },
+  button:{
+    backgroundColor: "#4caf50",
+    color: "#c8e6c9",
+    fontSize: "15px",
+    color:"black",
+    padding: "20px 20px",
+    borderRadius: "100%",
+    margin: "10px 0px",
+    cursor: "pointer",
   }
 }));
 
 function App() {
 const styles= useStyles();
-  const [data, setData]=useState([]);
-  const [modalInsertar, setModalInsertar]=useState(false);
-  const [modalEditar, setModalEditar]=useState(false);
-  const [modalEliminar, setModalEliminar]=useState(false);
+  const [users, setUsers]=useState([]);
+  const [modalInsert, setModalInsert]=useState(false);
+  const [modalEdit, setModalEdit]=useState(false);
+  const [modalDelete, setModalDelete]=useState(false);
 
-  const [consolaSeleccionada, setConsolaSeleccionada]=useState({
-    nombre: '',
-    empresa:'',
-    lanzamiento: '',
-    unidades_vendidas: ''
+  const [usrSelect, setUsrSelect]=useState({
+    first_name: '',
+    last_name:'',
+    email: ''
   })
 
   const handleChange=e=>{
     const {name, value}=e.target;
-    setConsolaSeleccionada(prevState=>({
+    setUsrSelect(prevState=>({
       ...prevState,
       [name]: value
     }))
-    console.log(consolaSeleccionada);
   }
 
-  const peticionGet=async()=>{
+  const getUsers=async()=>{
     await axios.get(baseUrl)
     .then(response=>{
-      setData(response.data);
+      setUsers(response.data.data);
     })
   }
 
-  const peticionPost=async()=>{
-    await axios.post(baseUrl, consolaSeleccionada)
+  const postUser=async()=>{
+    await axios.post(baseUrl, usrSelect)
     .then(response=>{
-      setData(data.concat(response.data))
-      abrirCerrarModalInsertar()
+      setUsers(users.concat(response.data))
+      handleModalInsert()
     })
   }
 
-  const peticionPut=async()=>{
-    await axios.put(baseUrl+consolaSeleccionada.id, consolaSeleccionada)
+  const updateUser=async()=>{
+    await axios.put(baseUrl+usrSelect.id, usrSelect)
     .then(response=>{
-      var dataNueva=data;
-      dataNueva.map(consola=>{
-        if(consolaSeleccionada.id===consola.id){
-          consola.nombre=consolaSeleccionada.nombre;
-          consola.lanzamiento=consolaSeleccionada.lanzamiento;
-          consola.empresa=consolaSeleccionada.empresa;
-          consola.unidades_vendidas=consolaSeleccionada.unidades_vendidas;
+      var newUser=users;
+      newUser.map(usr=>{
+        if(usrSelect.id===usr.id){
+          usr.first_name=usrSelect.first_name;
+          usr.last_name=usrSelect.last_name;
+          usr.email=usrSelect.email;
         }
       })
-      setData(dataNueva);
-      abrirCerrarModalEditar();
+      setUsers(newUser);
+      handleModalEdit();
     })
   }
 
-  const peticionDelete=async()=>{
-    await axios.delete(baseUrl+consolaSeleccionada.id)
+  const deleteUser=async()=>{
+    await axios.delete(baseUrl+usrSelect.id)
     .then(response=>{
-      setData(data.filter(consola=>consola.id!==consolaSeleccionada.id));
-      abrirCerrarModalEliminar();
+      setUsers(users.filter(us=>us.id!==usrSelect.id));
+      handleModalDelete();
     })
   }
 
-  const abrirCerrarModalInsertar=()=>{
-    setModalInsertar(!modalInsertar);
+  const handleModalInsert=()=>{
+    setModalInsert(!modalInsert);
   }
 
-  const abrirCerrarModalEditar=()=>{
-    setModalEditar(!modalEditar);
+  const handleModalEdit=()=>{
+    setModalEdit(!modalEdit);
   }
 
-  const abrirCerrarModalEliminar=()=>{
-    setModalEliminar(!modalEliminar);
+  const handleModalDelete=()=>{
+    setModalDelete(!modalDelete);
   }
 
-  const seleccionarConsola=(consola, caso)=>{
-    setConsolaSeleccionada(consola);
-    (caso==='Editar')?abrirCerrarModalEditar():abrirCerrarModalEliminar()
+  const selectUser=(consola, caso)=>{
+    setUsrSelect(consola);
+    (caso==='Edit')?handleModalEdit():handleModalDelete()
   }
 
-  useEffect(async()=>{
-    await peticionGet();
+  useEffect(()=>{
+    getUsers();
   },[])
 
-  const bodyInsertar=(
+  const bodyInsert=(
     <div className={styles.modal}>
-      <h3>Agregar Nueva Consola</h3>
-      <TextField name="nombre" className={styles.inputMaterial} label="Nombre" onChange={handleChange}/>
+      <h3>Add New User</h3>
+      <TextField name="first_name" className={styles.inputMaterial} label="First Name" onChange={handleChange}/>
       <br />
-      <TextField name="empresa" className={styles.inputMaterial} label="Empresa" onChange={handleChange}/>
+      <TextField name="last_name" className={styles.inputMaterial} label="Last Name" onChange={handleChange}/>
       <br />
-      <TextField name="lanzamiento" className={styles.inputMaterial} label="Lanzamiento" onChange={handleChange}/>
+      <TextField name="email" className={styles.inputMaterial} label="Email" onChange={handleChange}/>
       <br />
-      <TextField name="unidades_vendidas" className={styles.inputMaterial} label="Unidades Vendidas" onChange={handleChange}/>
       <br /><br />
       <div align="right">
-        <Button color="primary" onClick={()=>peticionPost()}>Insertar</Button>
-        <Button onClick={()=>abrirCerrarModalInsertar()}>Cancelar</Button>
+        <Button color="primary" onClick={()=>postUser()}>Insert</Button>
+        <Button onClick={()=>handleModalInsert()}>Cancel</Button>
       </div>
     </div>
   )
 
-  const bodyEditar=(
+  const bodyEdit=(
     <div className={styles.modal}>
-      <h3>Editar Consola</h3>
-      <TextField name="nombre" className={styles.inputMaterial} label="Nombre" onChange={handleChange} value={consolaSeleccionada && consolaSeleccionada.nombre}/>
+      <h3>Edit User</h3>
+      <TextField name="first_name" className={styles.inputMaterial} label="First Name" onChange={handleChange} value={usrSelect && usrSelect.first_name}/>
       <br />
-      <TextField name="empresa" className={styles.inputMaterial} label="Empresa" onChange={handleChange} value={consolaSeleccionada && consolaSeleccionada.empresa}/>
+      <TextField name="last_name" className={styles.inputMaterial} label="Last Name" onChange={handleChange} value={usrSelect && usrSelect.last_name}/>
       <br />
-      <TextField name="lanzamiento" className={styles.inputMaterial} label="Lanzamiento" onChange={handleChange} value={consolaSeleccionada && consolaSeleccionada.lanzamiento}/>
+      <TextField name="email" className={styles.inputMaterial} label="Email" onChange={handleChange} value={usrSelect && usrSelect.email}/>
       <br />
-      <TextField name="unidades_vendidas" className={styles.inputMaterial} label="Unidades Vendidas" onChange={handleChange} value={consolaSeleccionada && consolaSeleccionada.unidades_vendidas}/>
       <br /><br />
       <div align="right">
-        <Button color="primary" onClick={()=>peticionPut()}>Editar</Button>
-        <Button onClick={()=>abrirCerrarModalEditar()}>Cancelar</Button>
+        <Button color="primary" onClick={()=>updateUser()}>Edit</Button>
+        <Button onClick={()=>handleModalEdit()}>Cancel</Button>
       </div>
     </div>
   )
 
-  const bodyEliminar=(
+  const bodyDelete=(
     <div className={styles.modal}>
-      <p>Estás seguro que deseas eliminar la consola <b>{consolaSeleccionada && consolaSeleccionada.nombre}</b> ? </p>
+      <p>Are you sure you want to delete <b>{usrSelect.first_name +' '+ usrSelect.last_name}</b> ? </p>
       <div align="right">
-        <Button color="secondary" onClick={()=>peticionDelete()} >Sí</Button>
-        <Button onClick={()=>abrirCerrarModalEliminar()}>No</Button>
+        <Button color="secondary" onClick={()=>deleteUser()} >Accept</Button>
+        <Button onClick={()=>handleModalDelete()}>Cancel</Button>
 
       </div>
 
@@ -161,33 +167,34 @@ const styles= useStyles();
 
 
   return (
-    <div className="App">
+    <div className="App" style={{margin:50}}>
       <br />
-    <Button onClick={()=>abrirCerrarModalInsertar()}>Insertar</Button>
+      <div style={{textAlign: "right"}}>
+
+    <Button variant="contained" color="success" className={styles.button} onClick={()=>handleModalInsert()}><Add></Add></Button>
+      </div>
       <br /><br />
      <TableContainer>
        <Table>
          <TableHead>
            <TableRow>
-             <TableCell>Nombre</TableCell>
-             <TableCell>Empresa</TableCell>
-             <TableCell>Año de Lanzamiento</TableCell>
-             <TableCell>Unidades Vendidas (millones)</TableCell>
-             <TableCell>Acciones</TableCell>
+            <TableCell>Avatar</TableCell>
+             <TableCell>Name</TableCell>
+             <TableCell>Email</TableCell>
+             <TableCell>Actions</TableCell>
            </TableRow>
          </TableHead>
 
          <TableBody>
-           {data.map(consola=>(
-             <TableRow key={consola.id}>
-               <TableCell>{consola.nombre}</TableCell>
-               <TableCell>{consola.empresa}</TableCell>
-               <TableCell>{consola.lanzamiento}</TableCell>
-               <TableCell>{consola.unidades_vendidas}</TableCell>
+           {users.map(user=>(
+             <TableRow key={user.id}>
+               <TableCell><Avatar style={{width:80, height:80}} src={user.avatar}/></TableCell>
+               <TableCell>{user.first_name} {user.last_name}</TableCell>
+               <TableCell>{user.email}</TableCell>
                <TableCell>
-                 <Edit className={styles.iconos} onClick={()=>seleccionarConsola(consola, 'Editar')}/>
+                 <Edit className={styles.iconos} onClick={()=>selectUser(user, 'Edit')}/>
                  &nbsp;&nbsp;&nbsp;
-                 <Delete  className={styles.iconos} onClick={()=>seleccionarConsola(consola, 'Eliminar')}/>
+                 <Delete  className={styles.iconos} onClick={()=>selectUser(user, 'Delete')}/>
                  </TableCell>
              </TableRow>
            ))}
@@ -196,21 +203,21 @@ const styles= useStyles();
      </TableContainer>
      
      <Modal
-     open={modalInsertar}
-     onClose={abrirCerrarModalInsertar}>
-        {bodyInsertar}
+     open={modalInsert}
+     onClose={handleModalInsert}>
+        {bodyInsert}
      </Modal>
 
      <Modal
-     open={modalEditar}
-     onClose={abrirCerrarModalEditar}>
-        {bodyEditar}
+     open={modalEdit}
+     onClose={handleModalEdit}>
+        {bodyEdit}
      </Modal>
 
      <Modal
-     open={modalEliminar}
-     onClose={abrirCerrarModalEliminar}>
-        {bodyEliminar}
+     open={modalDelete}
+     onClose={handleModalDelete}>
+        {bodyDelete}
      </Modal>
     </div>
   );
